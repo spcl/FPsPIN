@@ -1,0 +1,78 @@
+%
+% Copyright 2014-2017 Katherine Flavel
+%
+% See LICENCE for the full copyright terms.
+%
+
+\startsetups[doc:classify]
+	\hfill
+	\cap \WORD \env{classify}
+	\hfill
+\stopsetups
+
+\startsetups[doc:reminder]
+	\getmarking[chapternumber]
+	\hskip.25em
+	\getmarking[chapter]
+\stopsetups
+
+\startsetups[doc:revision]
+	\small
+	Rev.~\env{revision}
+\stopsetups
+
+\setupbackgrounds[header][text][
+	bottomframe=on,
+	rulethickness=2pt,
+	framecolor=kmkf-green]
+
+% gap for rule above
+\setuplayout[
+	header=1.6\bodyfontsize,
+	headerdistance=2.4\bodyfontsize]
+
+% disabled, as we place this by \setupfootertexts
+\setuppagenumbering[location=]
+
+% grid={line,-25pt},
+
+\setuplabeltext[appendix=Appendix~]
+
+\definestructureconversionset[frontpart:pagenumber][][romannumerals]
+\definestructureconversionset[bodypart:pagenumber][][numbers]
+
+\startsectionblockenvironment[frontpart]
+\stopsectionblockenvironment
+
+\startsectionblockenvironment[bodypart,appendix]
+\stopsectionblockenvironment
+
+\setuphead[chapter,appendix,section,subsection][
+	align={flushleft, nothyphenated, verytolerant},
+	incrementnumber=yes]
+
+\startnotmode[manpage]
+
+	\setuphead[section,subsection][
+		page=no,
+		before={\blank[2em]},
+		style=\tfa]
+
+\stopnotmode
+
+% TODO: i want a nicer way to override default manpage header:
+\startmode[manpage]
+
+	\startsetups[man:header-left]
+		\rlap{\env{product}}
+	\stopsetups
+
+	\setuphead[section,subsection][
+		style=\WORDS]
+
+	% disable Reference index
+	\setuphead[part][before=,after=,page=no]
+
+\stopmode
+
+

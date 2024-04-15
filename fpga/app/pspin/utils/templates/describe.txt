@@ -1,0 +1,17 @@
+Description of register allocation
+==================================
+Register size: {{ args.word_size }} bytes
+
+{% for name, rg in groups.items() -%}
+>> Register group {{ name }}:
+{% for sg in rg.subgroups -%}
+... {{ sg.name }} (R{% if sg.readonly %}O{% else %}W{%endif%}) 
+{%- if sg.expanded %}
+{% for child in sg.expanded -%}
+==> Derived: {{ child.name }} @ {{ "%#x"|format(child.get_base_addr()) }}
+{% endfor %}
+{% else -%}
+{{ "%#x"|format(sg.get_base_addr()) }}
+{%- endif %}
+{% endfor %}
+{% endfor %}

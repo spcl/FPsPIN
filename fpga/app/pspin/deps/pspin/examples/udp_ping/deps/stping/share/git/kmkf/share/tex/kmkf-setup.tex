@@ -1,0 +1,28 @@
+%
+% Copyright 2014-2017 Katherine Flavel
+%
+% See LICENCE for the full copyright terms.
+%
+
+\setupinteraction[color=black,contrastcolor=black]
+
+\placebookmarks[chapter,section]
+
+\definecolor[kmkf-green][h=77CC88]
+
+%\setvariables[environment][company={kmkf.elide.org}]
+%\setvariables[environment][product={KMKF}]
+
+\input kmkf-fonts
+\input kmkf-layout
+\input kmkf-headers
+\input kmkf-toc
+
+% TODO: maybe centralise
+\setupstartstop[mdbcommand,mdbuserinput,mdbcomputeroutput,mdbapplication,mdbcode,mdbvarname,mdbtoken,mdbparameter,mdbconstant,mdbfunction,mdbreplaceable][
+	style=\tt]
+
+\setupstartstop[mdbreplaceable][
+	left=\$\{,
+	right=\}]
+

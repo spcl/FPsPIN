@@ -1,0 +1,70 @@
+{% macro call_group(group, func, arg) -%}
+{%- for sg in groups[group].subgroups -%}
+{{ func(arg, sg) }}
+{%- endfor %}
+{%- endmacro %}
+
+{% macro call_group_single(group, func, arg) -%}
+{%- for sg in groups[group].subgroups -%}
+{{ func(arg, sg.clone_single()) }}
+{%- endfor %}
+{%- endmacro %}
+
+{% macro call_expanded(group, func, arg) -%}
+{%- for sg in groups[group].expanded -%}
+{{ func(arg, sg) }}
+{%- endfor %}
+{%- endmacro %}
+
+{%- macro declare_out(sn, sg) %}
+    output reg  [{{ sg.signal_width * sg.count - 1}}:0] {{ sn }}_{{ sg.name }},
+{%- endmacro %}
+
+{%- macro declare_out_wire(sn, sg) %}
+    output wire [{{ sg.signal_width * sg.count - 1}}:0] {{ sn }}_{{ sg.name }},
+{%- endmacro %}
+
+{%- macro declare_in(sn, sg) %}
+    input wire [{{ sg.signal_width * sg.count - 1}}:0] {{ sn }}_{{ sg.name }},
+{%- endmacro %}
+
+{%- macro declare_wire(signal_name, sg) %}
+wire [{{ sg.signal_width * sg.count - 1}}:0] {{ signal_name }}_{{ sg.name }};
+{%- endmacro %}
+
+{%- macro connect_wire(signal_name, sg) %}
+    .{{ signal_name }}_{{ sg.name }},
+{%- endmacro %}
+
+{%- macro declare_params() %}
+{%- for k, v in params.items() %}
+localparam {{ k }} = {{ v }};
+{%- endfor %}
+{%- endmacro %}
+
+{%- macro declare_store(_, sg) %}
+{%- if sg.name != 'valid' %}
+reg [{{ sg.signal_width - 1 }}:0] store_{{ sg.name }} [{{ sg.count - 1 }}:0];
+{%- endif %}
+{%- endmacro %}
+
+{%- macro reset_store(_, sg) %}
+{%- if sg.name != 'valid' %}
+for (idx = 0; idx < {{ sg.count }}; idx = idx + 1)
+    store_{{ sg.name }}[idx] <= {{ sg.signal_width }}'h{{ '%x' | format(sg.reset) }};
+{%- endif %}
+{%- endmacro %}
+
+{%- macro update_store(signal_name, sg) %}
+{%- if sg.name != 'valid' %}
+for (idx = 0; idx < {{ sg.count }}; idx = idx + 1)
+    store_{{ sg.name }}[idx] <= `SLICE({{ signal_name }}_{{ sg.name }}, idx, {{ sg.signal_width }});
+{%- endif %}
+{%- endmacro %}
+
+{%- macro dump_store(_, sg) %}
+{%- if sg.name != 'valid' %}
+for (idx = 0; idx < {{ sg.count }}; idx = idx + 1)
+    $dumpvars(0, store_{{ sg.name }}[idx]);
+{%- endif %}
+{%- endmacro %}

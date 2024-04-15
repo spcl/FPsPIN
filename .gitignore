@@ -1,0 +1,37 @@
+*~
+*.lxt
+*.pyc
+*.vvp
+*.kate-swp
+
+.*
+!.gitignore
+
+# Kernel
+*.o
+*.cmd
+*.mod
+*.mod.c
+Module.symvers
+modules.order
+*.ko
+
+# Vivado
+*.jou
+*.log
+*.str
+
+tags
+
+sim_build/
+
+fpga/mqnic/**/fpga.*
+fpga/mqnic/**/*.tcl
+!fpga/mqnic/**/ip/*.tcl
+fpga/mqnic/**/rev/
+fpga/mqnic/**/defines.v
+!fpga/mqnic/**/config.tcl
+
+*.orig
+
+compile_commands.json

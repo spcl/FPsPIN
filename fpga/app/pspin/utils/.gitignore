@@ -1,0 +1,9 @@
+app-pspin
+test-mem
+*.log
+*.txt
+!requirements.txt
+!templates/*
+*.pcap
+pspin-user
+mem
