@@ -77,37 +77,26 @@ typedef struct {
   icmp_hdr_t icmp_hdr;
 } __attribute__((__packed__)) hdr_t;
 
-// http://www.microhowto.info/howto/calculate_an_internet_protocol_checksum_in_c.html
-uint16_t ip_checksum(void *vdata, size_t length) {
+uint16_t ip_checksum_timo(void *vdata, size_t length) {
   // Cast the data pointer to one that can be indexed.
-  char *data = (char *)vdata;
+  uint16_t *data = vdata;
+  uint8_t *data8 = vdata;
 
   // Initialise the accumulator.
   uint32_t acc = 0xffff;
 
   // Handle complete 16-bit blocks.
-  for (size_t i = 0; i + 1 < length; i += 2) {
-    uint16_t word;
-    memcpy(&word, data + i, 2);
-    acc += ntohs(word);
-    if (acc > 0xffff) {
-      acc -= 0xffff;
-    }
-  }
-
+  for (size_t i = 0; i < (length >> 1); i++) { acc += data[i]; }
   // Handle any partial block at the end of the data.
-  if (length & 1) {
-    uint16_t word = 0;
-    memcpy(&word, data + length - 1, 1);
-    acc += ntohs(word);
-    if (acc > 0xffff) {
-      acc -= 0xffff;
-    }
-  }
+  if (length & 1) { acc += data8[length-1]; }
+  // fold acc (upper 16 bits are the accumulated carry bits)
+  acc = (acc & 0xffff) + ((acc >> 16) & 0xffff); //fold acc (could cause a carry)
+  acc = (acc & 0xffff) + ((acc >> 16) & 0xffff); //fold acc again (take care of carry)
 
-  // Return the checksum in network byte order.
-  return htons(~acc);
+  return ~acc;
+
 }
+
 
 void ruleset_icmp_echo(fpspin_ruleset_t *rs) {
   assert(NUM_RULES_PER_RULESET == 4);
@@ -215,7 +204,7 @@ int main(int argc, char *argv[]) {
       hdrs->icmp_hdr.type = 0; // Echo-Reply
       hdrs->icmp_hdr.checksum = 0;
       hdrs->icmp_hdr.checksum =
-          ip_checksum((uint8_t *)&hdrs->icmp_hdr, icmp_len);
+          ip_checksum_timo((uint8_t *)&hdrs->icmp_hdr, icmp_len);
 
       fpspin_push_resp(&ctx, i, (fpspin_flag_t){.len = eth_len});
 
@@ -229,9 +218,9 @@ int main(int argc, char *argv[]) {
 
 out:;
   // get telemetry
-  double handler_avg = fpspin_get_cycles(&ctx, 0);
-  double host_dma_avg = fpspin_get_cycles(&ctx, 1);
-  double cycles_avg = fpspin_get_cycles(&ctx, 2);
+ double handler_avg = 0; fpspin_get_cycles(&ctx, 0);
+ double host_dma_avg = 0;  fpspin_get_cycles(&ctx, 1);
+ double cycles_avg = 0; fpspin_get_cycles(&ctx, 2);
 
   fpspin_exit(&ctx);
 

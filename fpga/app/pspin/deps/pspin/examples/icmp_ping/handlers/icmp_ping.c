@@ -43,12 +43,29 @@ typedef struct {
   icmp_hdr_t icmp_hdr;
 } __attribute__((__packed__)) hdr_t;
 
-__handler__ void pingpong_ph(handler_args_t *args) {
-  // counter 2: estimate latency of cycles()
-  uint32_t start_cycles = cycles();
-  uint32_t start = cycles();
-  push_counter(&__host_data.counters[2], start - start_cycles);
 
+uint16_t ip_checksum_timo(void *vdata, size_t length) {
+  // Cast the data pointer to one that can be indexed.
+  uint16_t *data = vdata;
+  uint8_t *data8 = vdata;
+
+  // Initialise the accumulator.
+  uint32_t acc = 0xffff;
+
+  // Handle complete 16-bit blocks.
+  for (size_t i = 0; i < (length >> 1); i++) { acc += data[i]; }
+  // Handle any partial block at the end of the data.
+  if (length & 1) { acc += data8[length-1]; }
+  // fold acc (upper 16 bits are the accumulated carry bits)
+  acc = (acc & 0xffff) + ((acc >> 16) & 0xffff); //fold acc (could cause a carry)
+  acc = (acc & 0xffff) + ((acc >> 16) & 0xffff); //fold acc again (take care of carry)
+
+  return ~acc;
+
+}
+
+
+__handler__ void pingpong_ph(handler_args_t *args) {
   DEBUG("Packet @ %p (L2: %p) (size %d) flow_id %d\n", args->task->pkt_mem,
         args->task->l2_pkt_mem, args->task->pkt_mem_size, args->task->flow_id);
 
@@ -76,7 +93,6 @@ __handler__ void pingpong_ph(handler_args_t *args) {
 
   if (DO_HOST && fpspin_check_host_mem(args)) {
     // DMA packet data
-    uint32_t host_start = cycles();
     spin_dma_to_host(HOST_PLD_ADDR(args), (uint32_t)nic_pld_addr, pkt_len, 1,
                      &dma);
     spin_cmd_wait(dma);
@@ -90,8 +106,6 @@ __handler__ void pingpong_ph(handler_args_t *args) {
                        host_pkt_len, 1, &dma);
     spin_cmd_wait(dma);
 
-    // counter 1: host mem access time
-    push_counter(&__host_data.counters[1], cycles() - host_start);
 
     DEBUG("DMA roundtrip finished, packet from host size: %d\n", host_pkt_len);
     pkt_len = host_pkt_len;
@@ -101,7 +115,7 @@ __handler__ void pingpong_ph(handler_args_t *args) {
     uint16_t icmp_len = ip_len - sizeof(ip_hdr_t);
     hdrs->icmp_hdr.type = 0; // Echo-Reply
     hdrs->icmp_hdr.checksum = 0;
-    hdrs->icmp_hdr.checksum = ip_checksum((uint8_t *)&hdrs->icmp_hdr, icmp_len);
+    hdrs->icmp_hdr.checksum = ip_checksum_timo((uint8_t *)&hdrs->icmp_hdr, icmp_len);
     pkt_len = ip_len + sizeof(eth_hdr_t);
   }
 
@@ -109,9 +123,6 @@ __handler__ void pingpong_ph(handler_args_t *args) {
   spin_send_packet(nic_pld_addr, pkt_len, &put);
   spin_cmd_wait(put);
 
-  // counter 0: handler time
-  uint32_t end = cycles();
-  push_counter(&__host_data.counters[0], end - start);
 }
 
 void init_handlers(handler_fn *hh, handler_fn *ph, handler_fn *th,

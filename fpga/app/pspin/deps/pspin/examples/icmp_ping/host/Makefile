@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAGS ?= -O3 -g -fsanitize=address -march=native
+CFLAGS ?= -O3 -g -march=native
 LIBS ?= $(shell realpath ../../../../../../../../lib)
 
 IMG_PATH := build/icmp_ping
