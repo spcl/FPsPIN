@@ -106,6 +106,11 @@ def consume_trials(key, trials):
 
         # 95% confidence interval
         median = np.median(values)
+
+        for v in values[0:19]:
+          print(str(key) + " " + str(l) + "  " + str(v))
+        #  print(str(key) + " " + str(l) + "  " + str(len(values)))
+
         bootstrap_ci = st.bootstrap((values,), np.median, confidence_level=0.95, method='percentile')
         ci_lo, ci_hi = bootstrap_ci.confidence_interval
 
@@ -164,6 +169,9 @@ def figsize(aspect_ratio):
     return (figwidth, figwidth/aspect_ratio)
 
 dp: pd.DataFrame = pd.read_pickle(dat_pkl)
+
+print(dp.to_string())
+
 if args.query:
     import code
     code.InteractiveConsole(locals=globals()).interact()
